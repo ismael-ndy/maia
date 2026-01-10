@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from api.users.models import Role
+
 
 class Token(BaseModel):
     """
@@ -21,4 +23,4 @@ class TokenData(BaseModel):
 
     email: str
     user_id: int
-    role: str
+    role: Role

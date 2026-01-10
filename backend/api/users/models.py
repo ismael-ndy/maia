@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from enum import Enum
 
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,12 +41,10 @@ class User(Base):
 
     therapist_links: Mapped[list["PatientLink"]] = relationship(
         foreign_keys="PatientLink.patient_id",
-        backref="patient",
     )
 
     patient_links: Mapped[list["PatientLink"]] = relationship(
         foreign_keys="PatientLink.therapist_id",
-        backref="therapist",
     )
 
 
@@ -70,28 +68,40 @@ class LinkStatus(str, Enum):
 
 
 class PatientLink(Base):
-    __tablename__ = "patient_link"
+    __tablename__ = "patient_links"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    link_status: Mapped[LinkStatus] = mapped_column(
-        SAEnum(LinkStatus, name="link_status_enum"),
-        nullable=False,
-        default=LinkStatus.PENDING,
-    )
-
     patient_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
 
     therapist_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    __table_args__ = UniqueConstraint(
-        "patient_id",
-        "therapist_id",
-        name="uq_patient_therapist",
+    link_status: Mapped[LinkStatus] = mapped_column(
+        SAEnum(LinkStatus, name="link_status_enum"),
+        nullable=False,
     )
+
+    patient: Mapped["User"] = relationship(
+        "User",
+        foreign_keys=[patient_id],
+        back_populates="patient_links",
+        lazy="selectin",
+    )
+
+    therapist: Mapped["User"] = relationship(
+        "User",
+        foreign_keys=[therapist_id],
+        back_populates="therapist_links",
+        lazy="selectin",
+    )
+
+
+class FriendRequest(BaseModel):
+    status: str
+    name: str
