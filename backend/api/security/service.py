@@ -8,7 +8,9 @@ from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from api.chats.service import create_patient
 from api.security.models import TokenData
 from api.security.settings import settings
 from api.users.models import Role, User
@@ -36,7 +38,9 @@ async def get_user(session: AsyncSession, email: str) -> User | None:
     Return the user object linked to the email arg if it exist,
     Return None otherwise
     """
-    statement = select(User).where(User.email == email)
+    statement = (
+        select(User).where(User.email == email).options(selectinload(User.patient))
+    )
     result = await session.execute(statement)
     user = result.scalar_one_or_none()
     if not user:
@@ -86,15 +90,20 @@ async def signup_user(
     try:
         session.add(user)
         await session.commit()
+        await session.refresh(user)
     except:
         await session.rollback()
         raise
+
+    thread_id = await create_patient(session, user.id)
+    print(thread_id)
 
     token = create_access_token(
         {
             "email": user.email,
             "user_id": user.id,
             "role": user.role.value,
+            "thread_id": str(thread_id),
         }
     )
 
@@ -109,7 +118,8 @@ def create_access_token(data: dict, expires_minutes: int | None = None) -> str:
         {
         "email": str
         "user_id": int,
-        "role": str
+        "role": str,
+        "thread_id": str
         }
     """
     to_encode = data.copy()
@@ -135,9 +145,15 @@ def get_token_data(token: Annotated[str, Depends(oauth2_scheme)]) -> TokenData:
         email = payload.get("email")
         user_id = payload.get("user_id")
         role = payload.get("role")
+        thread_id = payload.get("thread_id")
         if user_id is None or role is None:
             raise Exception
-        token_data = TokenData(email=email, user_id=user_id, role=Role(role))
+        token_data = TokenData(
+            email=email,
+            user_id=int(user_id),
+            role=Role(role),
+            thread_id=thread_id,
+        )
 
         return token_data
 

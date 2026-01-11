@@ -33,11 +33,16 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    thread_id = None
+    if user.patient:
+        thread_id = user.patient.thread_id
+
     access_token = create_access_token(
         data={
             "email": user.email,
             "user_id": user.id,
             "role": user.role.value,
+            "thread_id": thread_id,
         }
     )
 

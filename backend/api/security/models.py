@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from api.users.models import Role
@@ -19,8 +21,11 @@ class TokenData(BaseModel):
     """
     Data we wish to save when a user logins
     Used for authentification & authorization for most endpoints.
+
+    thread_id is the backboard.io th_id
     """
 
     email: str
     user_id: int
     role: Role
+    thread_id: Optional[str] = None
