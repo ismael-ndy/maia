@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 from enum import Enum
-from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import DateTime, ForeignKey, String
@@ -8,6 +7,7 @@ from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from api import Base
+from api.therapists.models import Report
 
 
 class Role(str, Enum):
@@ -48,7 +48,14 @@ class User(Base):
         foreign_keys="PatientLink.therapist_id",
     )
 
-    patient: Mapped["Patient"] = relationship(foreign_keys="Patient.user_id")
+    patient: Mapped["Patient"] = relationship(
+        foreign_keys="Patient.user_id",
+        lazy="selectin",
+    )
+    reports: Mapped["Report"] = relationship(
+        foreign_keys="Report.therapist_id",
+        lazy="selectin",
+    )
 
 
 class UserIn(BaseModel):
@@ -59,6 +66,7 @@ class UserIn(BaseModel):
 
 
 class UserOut(BaseModel):
+    id: int
     email: str
     role: str
     full_name: str
@@ -76,6 +84,7 @@ class Patient(Base):
 
     assistant_id: Mapped[str] = mapped_column(nullable=False)
     thread_id: Mapped[str] = mapped_column(nullable=False)
+    report_thread_id: Mapped[str] = mapped_column(nullable=False)
 
 
 class LinkStatus(str, Enum):

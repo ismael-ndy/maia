@@ -12,7 +12,7 @@ from api.security.service import (
 )
 from api.users.models import UserIn
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", tags=["Authentification"])
 
 
 @router.post("/token", response_model=Token)

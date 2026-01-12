@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel
 
 from api.core.db import SESSION_DEP
 from api.security.service import USER_INFO_DEP
+from api.users.models import FriendRequest
 from api.users.service import (
     InvalidRequest,
     NotFound,
@@ -11,10 +13,15 @@ from api.users.service import (
     send_friend_request,
 )
 
-router = APIRouter(prefix="/users", tags=["users"])
+
+class StatusResponse(BaseModel):
+    status: str
 
 
-@router.post("/friend-request")
+router = APIRouter(prefix="/friend-requests", tags=["Friend Requests"])
+
+
+@router.post("/", response_model=StatusResponse)
 async def send_friend_request_route(
     patient_email: str,
     session: SESSION_DEP,
@@ -41,19 +48,18 @@ async def send_friend_request_route(
         )
 
 
-@router.post("/friend-request/{therapist_id}/accept")
-async def accept_friend_request_route(
-    therapist_id: int,
+@router.get("/", response_model=list[FriendRequest])
+async def get_friend_requests_route(
     session: SESSION_DEP,
     user_info: USER_INFO_DEP,
+    fr_status: str | None = None,
 ):
     try:
-        await accept_friend_request(
+        return await get_all_friend_requests(
             session=session,
             user_info=user_info,
-            therapist_id=therapist_id,
+            status=fr_status,
         )
-        return {"status": "friend request accepted"}
 
     except PermissionDenied as e:
         raise HTTPException(
@@ -68,18 +74,19 @@ async def accept_friend_request_route(
         )
 
 
-@router.get("/friend-requests")
-async def get_friend_requests_route(
+@router.post("/{therapist_id}/accept", response_model=StatusResponse)
+async def accept_friend_request_route(
+    therapist_id: int,
     session: SESSION_DEP,
     user_info: USER_INFO_DEP,
-    fr_status: str | None = None,
 ):
     try:
-        return await get_all_friend_requests(
+        await accept_friend_request(
             session=session,
             user_info=user_info,
-            status=fr_status,
+            therapist_id=therapist_id,
         )
+        return {"status": "friend request accepted"}
 
     except PermissionDenied as e:
         raise HTTPException(

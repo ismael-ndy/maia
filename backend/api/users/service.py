@@ -79,9 +79,9 @@ async def get_all_friend_requests(
 ) -> list[FriendRequest]:
     match user_info.role:
         case Role.PATIENT:
-            field = "therapist_id"
-        case Role.THERAPIST:
             field = "patient_id"
+        case Role.THERAPIST:
+            field = "therapist_id"
         case _:
             raise PermissionDenied("Invalid role")
 
