@@ -31,6 +31,8 @@ class User(Base):
 
     full_name: Mapped[str] = mapped_column(nullable=False)
 
+    phone_number: Mapped[str] = mapped_column(nullable=False)
+
     hashed_pw: Mapped[str] = mapped_column(nullable=False)
 
     is_active: Mapped[bool] = mapped_column(default=True)
@@ -42,10 +44,12 @@ class User(Base):
 
     therapist_links: Mapped[list["PatientLink"]] = relationship(
         foreign_keys="PatientLink.patient_id",
+        back_populates="therapist",
     )
 
     patient_links: Mapped[list["PatientLink"]] = relationship(
         foreign_keys="PatientLink.therapist_id",
+        back_populates="patient",
     )
 
     patient: Mapped["Patient"] = relationship(
@@ -63,6 +67,7 @@ class UserIn(BaseModel):
     password: str
     role: str
     full_name: str
+    phone_number: str
 
 
 class UserOut(BaseModel):
@@ -70,6 +75,7 @@ class UserOut(BaseModel):
     email: str
     role: str
     full_name: str
+    phone_number: str
 
 
 class Patient(Base):
@@ -118,6 +124,7 @@ class PatientLink(Base):
         foreign_keys=[patient_id],
         back_populates="patient_links",
         lazy="selectin",
+        overlaps="therapist_links",
     )
 
     therapist: Mapped["User"] = relationship(
@@ -125,9 +132,11 @@ class PatientLink(Base):
         foreign_keys=[therapist_id],
         back_populates="therapist_links",
         lazy="selectin",
+        overlaps="patient_links",
     )
 
 
 class FriendRequest(BaseModel):
+    friend_user_id: int
     status: str
     name: str

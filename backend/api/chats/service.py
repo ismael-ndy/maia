@@ -15,7 +15,7 @@ from api.users.models import Patient, Role
 from api.users.service import InvalidRequest, PermissionDenied
 
 SYSTEM_PROMPT = Path("prompts/system_prompt_v1.txt").read_text()
-KB_FILES = []
+KB_FILES_DIR = Path("knowledge_docs")
 
 
 async def create_user_assistant(user_id: int) -> str:
@@ -30,7 +30,7 @@ async def create_user_assistant(user_id: int) -> str:
             tools=TOOLS,
         )
 
-        for path in KB_FILES:
+        for path in KB_FILES_DIR.iterdir():
             await client.upload_document_to_assistant(
                 assistant_id=assistant.assistant_id,
                 file_path=path,

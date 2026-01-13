@@ -53,12 +53,7 @@ async def login_for_access_token(
 
 @router.post("/signup", response_model=Token, status_code=201)
 async def signup(session: SESSION_DEP, signup_data: UserIn):
-    email = signup_data.email
-    pwd = signup_data.password
-    full_name = signup_data.full_name
-    role = signup_data.role
-
-    token = await signup_user(session, email, pwd, full_name, role)
+    token = await signup_user(session, signup_data)
     response = {"access_token": token, "token_type": "bearer"}
 
     return response

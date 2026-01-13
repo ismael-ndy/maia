@@ -100,6 +100,7 @@ async def get_all_friend_requests(
         case Role.PATIENT:
             return [
                 FriendRequest(
+                    friend_user_id=link.therapist.id,
                     status=link.link_status.value,
                     name=link.therapist.full_name,
                 )
@@ -108,6 +109,7 @@ async def get_all_friend_requests(
         case Role.THERAPIST:
             return [
                 FriendRequest(
+                    friend_user_id=link.patient.id,
                     status=link.link_status.value,
                     name=link.patient.full_name,
                 )

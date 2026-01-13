@@ -13,7 +13,7 @@ from sqlalchemy.orm import selectinload
 from api.chats.service import create_patient
 from api.security.models import TokenData
 from api.security.settings import settings
-from api.users.models import Role, User
+from api.users.models import Role, User, UserIn
 
 password_hash = PasswordHash.recommended()  # hash utility (argon2 hasher)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")  # token dependency
@@ -63,9 +63,7 @@ async def authenticate_user(
     return user
 
 
-async def signup_user(
-    session: AsyncSession, email: str, password: str, full_name: str, role: str
-) -> str:
+async def signup_user(session: AsyncSession, signup_data: UserIn) -> str:
     """
     Signup method.
     Check for email uniqueness
@@ -75,17 +73,23 @@ async def signup_user(
     Return JWT token
     """
     # Check if email already used
-    if await get_user(session, email):
+    if await get_user(session, signup_data.email):
         raise HTTPException(status_code=409, detail="Email already registered.")
 
     try:
-        role = Role(role)
+        role = Role(signup_data.role)
     except ValueError:
         raise HTTPException(400, "Invalid role.")
 
-    hashed_pwd = get_password_hash(password)
+    hashed_pwd = get_password_hash(signup_data.password)
 
-    user = User(email=email, role=role, full_name=full_name, hashed_pw=hashed_pwd)
+    user = User(
+        email=signup_data.email,
+        role=role,
+        full_name=signup_data.full_name,
+        phone_number=signup_data.phone_number,
+        hashed_pw=hashed_pwd,
+    )
 
     try:
         session.add(user)

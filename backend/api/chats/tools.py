@@ -31,22 +31,5 @@ GUARDIAN_TOOL: ToolDict = {
     },
 }
 
-EXERCISE_TOOL: ToolDict = {
-    "type": "function",
-    "function": {
-        "name": "suggest_exercise",
-        "description": "Request a structured therapeutic exercise from the backend",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "category": {"type": "string"},
-                "goal": {"type": "string"},
-                "intensity": {"type": "string"},
-                "confidence": {"type": "number"},
-            },
-            "required": ["category", "goal"],
-        },
-    },
-}
 
-TOOLS: List[ToolDict] = [GUARDIAN_TOOL, EXERCISE_TOOL]
+TOOLS: List[ToolDict] = [GUARDIAN_TOOL]
