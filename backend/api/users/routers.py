@@ -9,6 +9,7 @@ from api.users.service import (
     NotFound,
     PermissionDenied,
     accept_friend_request,
+    decline_friend_request,
     get_all_friend_requests,
     send_friend_request,
 )
@@ -87,6 +88,33 @@ async def accept_friend_request_route(
             therapist_id=therapist_id,
         )
         return {"status": "friend request accepted"}
+
+    except PermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    except InvalidRequest as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post("/{therapist_id}/decline", response_model=StatusResponse)
+async def decline_friend_request_route(
+    therapist_id: int,
+    session: SESSION_DEP,
+    user_info: USER_INFO_DEP,
+):
+    try:
+        await decline_friend_request(
+            session=session,
+            user_info=user_info,
+            therapist_id=therapist_id,
+        )
+        return {"status": "friend request declined"}
 
     except PermissionDenied as e:
         raise HTTPException(

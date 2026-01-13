@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from enum import Enum
 
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -101,6 +101,9 @@ class LinkStatus(str, Enum):
 
 class PatientLink(Base):
     __tablename__ = "patient_links"
+    __table_args__ = (
+        UniqueConstraint("patient_id", "therapist_id", name="uq_patient_therapist"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
@@ -140,3 +143,5 @@ class FriendRequest(BaseModel):
     friend_user_id: int
     status: str
     name: str
+    email: str
+    phone_number: str

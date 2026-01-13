@@ -95,10 +95,15 @@ async def stream_message(
             )
 
             async for chunk in stream:
-                if chunk.get("type") == "tool_call":
+                chunk_type = chunk.get("type")
+                
+                if chunk_type == "content_streaming":
+                    yield {"type": "content", "content": chunk.get("content", "")}
+                elif chunk_type == "message_complete":
+                    break
+                elif chunk_type == "tool_call":
                     # TODO: handle guardian_check / suggest_exercise
                     pass
-                yield chunk
 
     except BackboardAPIError as e:
         raise InvalidRequest(f"Chat service error: {str(e)}")
@@ -115,10 +120,10 @@ async def get_thread_messages(thread_id: str) -> list[ThreadMessage]:
             thread = await client.get_thread(thread_id)
 
             messages = thread.messages or []
-            messages_sorted = sorted(messages, key=lambda m: m.created_at, reverse=True)
+            messages_sorted = sorted(messages, key=lambda m: m.created_at, reverse=False)
 
             return [
-                ThreadMessage(timestamp=m.created_at, content=m.content)  # type: ignore
+                ThreadMessage(timestamp=m.created_at, content=m.content, role=m.role)  # type: ignore
                 for m in messages_sorted
             ]
 

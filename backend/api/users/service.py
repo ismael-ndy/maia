@@ -40,6 +40,15 @@ async def send_friend_request(
     if patient_id is None:
         raise NotFound(f"Patient with email {patient_email} does not exist")
 
+    # Check if a link already exists between this therapist and patient
+    existing_link_stmt = select(PatientLink).where(
+        PatientLink.patient_id == patient_id,
+        PatientLink.therapist_id == user_info.user_id,
+    )
+    existing_link = (await session.execute(existing_link_stmt)).scalars().one_or_none()
+    if existing_link is not None:
+        raise PermissionDenied("A request already exists for this patient")
+
     link = PatientLink(
         patient_id=patient_id,
         therapist_id=user_info.user_id,
@@ -69,6 +78,28 @@ async def accept_friend_request(
         raise InvalidRequest("Invalid friend request")
 
     link.link_status = LinkStatus.ACCEPTED
+    await session.commit()
+
+
+async def decline_friend_request(
+    session: AsyncSession,
+    user_info: TokenData,
+    therapist_id: int,
+) -> None:
+    if user_info.role is Role.THERAPIST:
+        raise PermissionDenied("Therapists cannot decline friend requests")
+
+    stmt = select(PatientLink).where(
+        PatientLink.patient_id == user_info.user_id,
+        PatientLink.therapist_id == therapist_id,
+    )
+
+    link = (await session.execute(stmt)).scalars().one_or_none()
+
+    if link is None:
+        raise InvalidRequest("Invalid friend request")
+
+    link.link_status = LinkStatus.DENIED
     await session.commit()
 
 
@@ -103,6 +134,8 @@ async def get_all_friend_requests(
                     friend_user_id=link.therapist.id,
                     status=link.link_status.value,
                     name=link.therapist.full_name,
+                    email=link.therapist.email,
+                    phone_number=link.therapist.phone_number,
                 )
                 for link in links
             ]
@@ -112,6 +145,8 @@ async def get_all_friend_requests(
                     friend_user_id=link.patient.id,
                     status=link.link_status.value,
                     name=link.patient.full_name,
+                    email=link.patient.email,
+                    phone_number=link.patient.phone_number,
                 )
                 for link in links
             ]
