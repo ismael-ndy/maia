@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 
@@ -32,16 +34,19 @@ async def stream_message_route(
                 user_info=user_info,
                 content=payload.content,
             ):
-                yield f"data: {event}\n\n"
+                yield f"data: {json.dumps(event)}\n\n"
+            
+            # Signal completion
+            yield "data: [DONE]\n\n"
 
         except PermissionDenied as e:
-            yield (f'data: {{"type": "error", "message": "{str(e)}"}}\n\n')
+            yield f'data: {json.dumps({"type": "error", "message": str(e)})}\n\n'
 
         except InvalidRequest as e:
-            yield (f'data: {{"type": "error", "message": "{str(e)}"}}\n\n')
+            yield f'data: {json.dumps({"type": "error", "message": str(e)})}\n\n'
 
         except Exception as _:
-            yield ('data: {{"type": "error", "message": "Internal server error"}}\n\n')
+            yield f'data: {json.dumps({"type": "error", "message": "Internal server error"})}\n\n'
 
     return StreamingResponse(
         event_generator(),

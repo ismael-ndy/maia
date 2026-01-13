@@ -56,6 +56,7 @@ async def get_patient(
         email=patient.email,
         role=patient.role.value,
         full_name=patient.full_name,
+        phone_number=patient.phone_number,
     )
 
 
@@ -89,6 +90,7 @@ async def list_patients(session: AsyncSession, user_info: TokenData) -> list[Use
                 email=p.email,
                 role=p.role.value,
                 full_name=p.full_name,
+                phone_number=p.phone_number,
             )
         )
 
