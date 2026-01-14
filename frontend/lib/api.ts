@@ -30,6 +30,20 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
   return response
 }
 
+// User Profile API
+export interface UserProfile {
+  id: number
+  email: string
+  role: string
+  full_name: string
+  phone_number: string
+}
+
+export async function getProfile(): Promise<UserProfile> {
+  const response = await fetchWithAuth("/auth/me")
+  return response.json()
+}
+
 // Chat API
 // ThreadMessage from backend - includes role for distinguishing user vs assistant messages
 export interface ThreadMessage {
@@ -139,6 +153,27 @@ export async function getPatient(patientId: string | number): Promise<Patient> {
   return response.json()
 }
 
+// AlertMessage from backend
+export interface Alert {
+  id: number
+  therapist_id: number
+  patient_id: number
+  patient_name: string | null
+  risk_level: "low" | "medium" | "high"
+  cause: string
+  created_at: string
+}
+
+export async function getAlerts(): Promise<Alert[]> {
+  const response = await fetchWithAuth("/therapists/alerts")
+  return response.json()
+}
+
+export async function getPatientAlerts(patientId: string | number): Promise<Alert[]> {
+  const response = await fetchWithAuth(`/therapists/patients/${patientId}/alerts`)
+  return response.json()
+}
+
 // ReportMessage from backend
 export interface Report {
   id: number | null
@@ -161,6 +196,37 @@ export async function generateReport(patientId: string | number): Promise<Report
   const response = await fetchWithAuth(`/therapists/patients/${patientId}/reports`, {
     method: "POST",
   })
+  return response.json()
+}
+
+// Patient Notes API
+export interface PatientNote {
+  id: number
+  patient_id: number
+  therapist_id: number
+  file_name: string
+  created_at: string
+}
+
+export async function getPatientNotes(patientId: string | number): Promise<PatientNote[]> {
+  const response = await fetchWithAuth(`/therapists/patients/${patientId}/notes`)
+  return response.json()
+}
+
+export async function uploadPatientNote(patientId: string | number, file: File): Promise<PatientNote> {
+  const formData = new FormData()
+  formData.append("file", file)
+  
+  const response = await fetchWithAuth(`/therapists/patients/${patientId}/notes`, {
+    method: "POST",
+    body: formData,
+  })
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.detail || `Upload failed with status ${response.status}`)
+  }
+  
   return response.json()
 }
 

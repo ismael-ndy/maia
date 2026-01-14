@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, Clock, User } from "lucide-react"
-import type { Alert } from "./therapist-dashboard"
+import type { Alert } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 interface AlertsListProps {
@@ -58,7 +58,7 @@ export function AlertsList({ alerts }: AlertsListProps) {
                     {alert.risk_level} risk
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{alert.urgency}</p>
+                <p className="text-sm text-muted-foreground">{alert.cause}</p>
               </div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                 <Clock className="h-3 w-3" />
