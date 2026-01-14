@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 
 from api.chats.models import SendMessageRequest, ThreadMessage
 from api.chats.service import get_thread_messages, stream_message
+from api.core.db import SESSION_DEP
 from api.security.service import USER_INFO_DEP
 from api.users.models import Role
 from api.users.service import InvalidRequest, PermissionDenied
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/chats", tags=["Chats"])
 async def stream_message_route(
     payload: SendMessageRequest,
     user_info: USER_INFO_DEP,
+    session: SESSION_DEP,
 ):
     """
     Stream assistant responses for the authenticated user.
@@ -31,6 +33,7 @@ async def stream_message_route(
     async def event_generator():
         try:
             async for event in stream_message(
+                session=session,
                 user_info=user_info,
                 content=payload.content,
             ):

@@ -1,10 +1,14 @@
+from pathlib import Path
+
+from backboard import BackboardClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from api.chats.service import generate_weekly_report
+from api.config import BACKBOARD_API_KEY
 from api.security.models import TokenData
-from api.therapists.models import Report, ReportMessage
+from api.therapists.models import Alert, AlertMessage, PatientNote, PatientNoteMessage, Report, ReportMessage
 from api.users.models import LinkStatus, PatientLink, Role, User, UserOut
 from api.users.service import InvalidRequest, PermissionDenied
 
@@ -193,3 +197,176 @@ async def get_patient_report(
         patient_id=report.patient_id,
         created_at=report.created_at,
     )
+
+
+async def add_patient_note(
+    session: AsyncSession,
+    user_info: TokenData,
+    patient_id: int,
+    file_path: Path,
+    file_name: str,
+) -> PatientNoteMessage:
+    """
+    Add a patient note document to the database and upload it to the patient's assistant.
+    
+    Args:
+        session: Database session
+        user_info: Current user's token data
+        patient_id: The patient's user ID
+        file_path: Path to the file to upload
+        file_name: Original file name
+    
+    Returns:
+        The created PatientNoteMessage
+    """
+    if user_info.role != Role.THERAPIST:
+        raise PermissionDenied("Only therapists can add patient notes")
+
+    await assert_therapist_can_access_patient(session, user_info.user_id, patient_id)
+
+    # Get the patient's assistant_id
+    stmt = select(User).where(User.id == patient_id).options(selectinload(User.patient))
+    patient_obj = (await session.execute(stmt)).scalar_one_or_none()
+    
+    if not patient_obj or not patient_obj.patient:
+        raise InvalidRequest("Patient not found")
+
+    assistant_id = patient_obj.patient.assistant_id
+
+    # Upload document to the patient's assistant
+    async with BackboardClient(api_key=BACKBOARD_API_KEY) as client:  # type: ignore
+        await client.upload_document_to_assistant(
+            assistant_id=assistant_id,
+            file_path=file_path,
+        )
+
+    # Save the note record to the database
+    note = PatientNote(
+        therapist_id=user_info.user_id,
+        patient_id=patient_id,
+        file_name=file_name,
+    )
+
+    try:
+        session.add(note)
+        await session.commit()
+        await session.refresh(note)
+    except Exception:
+        await session.rollback()
+        raise
+
+    return PatientNoteMessage(
+        id=note.id,
+        patient_id=note.patient_id,
+        therapist_id=note.therapist_id,
+        file_name=note.file_name,
+        created_at=note.created_at,
+    )
+
+
+async def list_patient_notes(
+    session: AsyncSession,
+    user_info: TokenData,
+    patient_id: int,
+) -> list[PatientNoteMessage]:
+    """
+    List all notes for a specific patient.
+    """
+    if user_info.role != Role.THERAPIST:
+        raise PermissionDenied("Only therapists can view patient notes")
+
+    await assert_therapist_can_access_patient(session, user_info.user_id, patient_id)
+
+    stmt = (
+        select(PatientNote)
+        .where(
+            PatientNote.therapist_id == user_info.user_id,
+            PatientNote.patient_id == patient_id,
+        )
+        .order_by(PatientNote.created_at.desc())
+    )
+
+    notes = (await session.execute(stmt)).scalars().all()
+
+    return [
+        PatientNoteMessage(
+            id=n.id,
+            patient_id=n.patient_id,
+            therapist_id=n.therapist_id,
+            file_name=n.file_name,
+            created_at=n.created_at,
+        )
+        for n in notes
+    ]
+
+
+async def get_alerts(
+    session: AsyncSession,
+    user_info: TokenData,
+) -> list[AlertMessage]:
+    """
+    Get all alerts for a therapist's patients.
+    """
+    if user_info.role != Role.THERAPIST:
+        raise PermissionDenied("Only therapists can access alerts")
+
+    stmt = (
+        select(Alert, User)
+        .join(User, Alert.patient_id == User.id)
+        .where(Alert.therapist_id == user_info.user_id)
+        .order_by(Alert.created_at.desc())
+    )
+
+    results = (await session.execute(stmt)).all()
+
+    return [
+        AlertMessage(
+            id=alert.id,
+            therapist_id=alert.therapist_id,
+            patient_id=alert.patient_id,
+            patient_name=patient.full_name,
+            risk_level=alert.risk_level,
+            cause=alert.cause,
+            created_at=alert.created_at,
+        )
+        for alert, patient in results
+    ]
+
+
+async def get_patient_alerts(
+    session: AsyncSession,
+    user_info: TokenData,
+    patient_id: int,
+) -> list[AlertMessage]:
+    """
+    Get alerts for a specific patient.
+    """
+    if user_info.role != Role.THERAPIST:
+        raise PermissionDenied("Only therapists can access alerts")
+
+    await assert_therapist_can_access_patient(session, user_info.user_id, patient_id)
+
+    stmt = (
+        select(Alert, User)
+        .join(User, Alert.patient_id == User.id)
+        .where(
+            Alert.therapist_id == user_info.user_id,
+            Alert.patient_id == patient_id,
+        )
+        .order_by(Alert.created_at.desc())
+    )
+
+    results = (await session.execute(stmt)).all()
+
+    return [
+        AlertMessage(
+            id=alert.id,
+            therapist_id=alert.therapist_id,
+            patient_id=alert.patient_id,
+            patient_name=patient.full_name,
+            risk_level=alert.risk_level,
+            cause=alert.cause,
+            created_at=alert.created_at,
+        )
+        for alert, patient in results
+    ]

@@ -1,17 +1,19 @@
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, AsyncIterator, Dict
 
 from backboard import BackboardClient
 from backboard.exceptions import BackboardAPIError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.chats.models import ThreadMessage
-from api.chats.tools import TOOLS
+from api.chats.tools import TOOLS, guardian_check
 from api.config import BACKBOARD_API_KEY
 from api.security.models import TokenData
 from api.therapists.models import ReportMessage
-from api.users.models import Patient, Role
+from api.users.models import LinkStatus, Patient, PatientLink, Role
 from api.users.service import InvalidRequest, PermissionDenied
 
 SYSTEM_PROMPT = Path("prompts/system_prompt_v1.txt").read_text()
@@ -76,6 +78,7 @@ async def create_patient(session: AsyncSession, user_id: int) -> str:
 
 
 async def stream_message(
+    session: AsyncSession,
     user_info: TokenData,
     content: str,
 ) -> AsyncIterator[Dict[str, Any]]:
@@ -84,6 +87,15 @@ async def stream_message(
 
     if not user_info.thread_id:
         raise InvalidRequest("User does not have an assigned thread")
+
+    # Get therapist_id for this patient
+    link_result = await session.execute(
+        select(PatientLink.therapist_id).where(
+            PatientLink.patient_id == user_info.user_id,
+            PatientLink.link_status == LinkStatus.ACCEPTED,
+        )
+    )
+    therapist_id = link_result.scalar_one_or_none()
 
     try:
         async with BackboardClient(api_key=BACKBOARD_API_KEY) as client:  # type: ignore
@@ -96,14 +108,48 @@ async def stream_message(
 
             async for chunk in stream:
                 chunk_type = chunk.get("type")
-                
+
                 if chunk_type == "content_streaming":
                     yield {"type": "content", "content": chunk.get("content", "")}
                 elif chunk_type == "message_complete":
                     break
-                elif chunk_type == "tool_call":
-                    # TODO: handle guardian_check / suggest_exercise
-                    pass
+                elif chunk_type == "tool_submit_required":
+                    run_id = chunk["run_id"]
+                    tool_calls = chunk["tool_calls"]
+
+                    tool_outputs = []
+                    for tc in tool_calls:
+                        function_name = tc["function"]["name"]
+                        function_args = json.loads(tc["function"]["arguments"])
+
+                        if function_name == "guardian_check":
+                            risk_level = function_args.get("risk_level", "low")
+                            cause = function_args.get("cause") or f"Safety concern detected - {risk_level} risk level"
+                            
+                            result = await guardian_check(
+                                session=session,
+                                therapist_id=therapist_id or 0,
+                                patient_id=user_info.user_id,
+                                risk_level=risk_level,
+                                cause=cause,
+                            )
+
+                            tool_outputs.append({
+                                "tool_call_id": tc["id"],
+                                "output": json.dumps(result),
+                            })
+
+                    # Submit tool outputs and stream the final response
+                    async for tool_chunk in await client.submit_tool_outputs(
+                        thread_id=str(user_info.thread_id),
+                        run_id=run_id,
+                        tool_outputs=tool_outputs,
+                        stream=True,
+                    ):
+                        if tool_chunk["type"] == "content_streaming":
+                            yield {"type": "content", "content": tool_chunk.get("content", "")}
+                        elif tool_chunk["type"] == "message_complete":
+                            break
 
     except BackboardAPIError as e:
         raise InvalidRequest(f"Chat service error: {str(e)}")

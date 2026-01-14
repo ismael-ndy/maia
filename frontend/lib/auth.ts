@@ -112,6 +112,18 @@ export function getUserRole(): "patient" | "therapist" | null {
   return localStorage.getItem("user_role") as "patient" | "therapist" | null
 }
 
+export function getUserName(): string | null {
+  const token = getToken()
+  if (!token) return null
+
+  try {
+    const decoded = jwtDecode<TokenPayload>(token)
+    return decoded.first_name || null
+  } catch {
+    return null
+  }
+}
+
 export function isAuthenticated(): boolean {
   const token = getToken()
   if (!token) return false
