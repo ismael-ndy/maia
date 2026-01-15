@@ -22,6 +22,9 @@ MAIA leverages [Backboard](https://backboard.dev) to provide advanced AI feature
 - **CBT Knowledge Base** - AI responses are grounded in Cognitive Behavioral Therapy literature and best practices
 - **Therapist Notes Integration** - Therapists can upload patient notes that inform MAIA's responses for personalized support
 
+#### 🛠️ Custom Tools
+- **Guardian AI** - Real-time detection of concerning patterns or crisis indicators, automatically notifying therapists
+
 ### For Patients
 - 💬 **Empathetic AI Chat** - 24/7 access to a supportive AI companion that remembers your journey
 - 📜 **Chat History** - Full access to previous conversations
