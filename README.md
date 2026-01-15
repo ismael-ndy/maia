@@ -12,7 +12,7 @@ MAIA is a web-based AI-powered mental health support platform that provides 24/7
 
 ### AI-Powered Capabilities (via Backboard)
 
-MAIA leverages [Backboard](https://backboard.dev) to provide advanced AI features ([Some Detailed Flows](https://drive.google.com/file/d/1bAFEV2qTIjz1WuIk6ILydJkaT9pHPNpw/view?usp=sharing)):
+MAIA leverages [Backboard](https://backboard.io) to provide advanced AI features ([Some Detailed Flows](https://drive.google.com/file/d/1bAFEV2qTIjz1WuIk6ILydJkaT9pHPNpw/view?usp=sharing)):
 
 #### 🧠 Stateful Memory
 - **Persistent Conversations** - MAIA remembers context across sessions, maintaining continuity in therapeutic conversations
