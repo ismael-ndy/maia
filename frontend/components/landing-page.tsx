@@ -240,7 +240,8 @@ export function LandingPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Top row - 3 cards */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
               <div className="group p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50 hover:bg-card hover:shadow-lg hover:border-primary/20 hover:-translate-y-1 transition-all duration-300">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <Clock className="h-6 w-6 text-primary" />
@@ -270,8 +271,11 @@ export function LandingPage() {
                   Get notified immediately when Maia detects concerning patterns or crisis indicators in patient conversations.
                 </p>
               </div>
+            </div>
 
-              <div className="group p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50 hover:bg-card hover:shadow-lg hover:border-primary/20 hover:-translate-y-1 transition-all duration-300">
+            {/* Bottom row - 2 cards centered */}
+            <div className="flex flex-col md:flex-row justify-center gap-6">
+              <div className="group p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50 hover:bg-card hover:shadow-lg hover:border-primary/20 hover:-translate-y-1 transition-all duration-300 md:w-[calc(33.333%-0.5rem)] lg:w-[calc(33.333%-1rem)]">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <TrendingUp className="h-6 w-6 text-primary" />
                 </div>
@@ -281,23 +285,13 @@ export function LandingPage() {
                 </p>
               </div>
 
-              <div className="group p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50 hover:bg-card hover:shadow-lg hover:border-primary/20 hover:-translate-y-1 transition-all duration-300">
+              <div className="group p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50 hover:bg-card hover:shadow-lg hover:border-primary/20 hover:-translate-y-1 transition-all duration-300 md:w-[calc(33.333%-0.5rem)] lg:w-[calc(33.333%-1rem)]">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <BookOpen className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Session Notes Integration</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Upload session notes to help Maia provide more personalized and context-aware support aligned with your treatment approach.
-                </p>
-              </div>
-
-              <div className="group p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50 hover:bg-card hover:shadow-lg hover:border-primary/20 hover:-translate-y-1 transition-all duration-300">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Shield className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">HIPAA Compliant</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Built with privacy and security in mind. All patient data is encrypted and handled according to healthcare privacy standards.
                 </p>
               </div>
             </div>
