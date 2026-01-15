@@ -118,12 +118,12 @@ MAIA leverages [Backboard](https://backboard.dev) to provide advanced AI feature
 
    Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## � Future Improvements
+## Future Improvements
 
 - [ ] Find a solution to uploading RAG documents for each user individually
 - [ ] Fix the bug where threads/assistants get created for therapist accounts
 
-## �📄 License
+## 📄 License
 
 This project is under the GNU AFFERO GENERAL PUBLIC LICENSE.
 
